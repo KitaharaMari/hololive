@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hololive Hub</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scrollbar-width:thin;scrollbar-color:#2a2a40 #080810}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#080810}
+::-webkit-scrollbar-thumb{background:#2a2a40;border-radius:3px}
+body{background:#080810;color:#f0f0f8;font-family:'Segoe UI','Helvetica Neue',sans-serif;min-height:100vh}
+
+/* ── Header ── */
+.site-header{padding:20px 32px 16px;border-bottom:1px solid #14141f;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.site-title{font-size:22px;font-weight:700;letter-spacing:1px;color:#fff}
+.site-title span{color:#00b4e8}
+.api-btn{background:#14141f;border:1px solid #2a2a40;color:#888;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;transition:border-color .2s,color .2s}
+.api-btn:hover{border-color:#444;color:#ccc}
+
+/* ── API Banner ── */
+.api-banner{background:#10101c;border:1px solid #1e1e35;border-radius:8px;padding:12px 20px;margin:12px 32px;display:flex;align-items:center;gap:10px;font-size:12px;color:#888;flex-wrap:wrap}
+.api-banner a{color:#00b4e8}
+.api-banner input{flex:1;min-width:200px;max-width:340px;background:#080810;border:1px solid #2a2a40;border-radius:6px;padding:6px 10px;color:#fff;font-size:12px;outline:none}
+.api-banner input:focus{border-color:#00b4e8}
+.api-btn-save{background:#00b4e8;color:#000;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.api-btn-clear{background:#1e1e35;color:#888;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer}
+.hidden{display:none!important}
+
+/* ── Section header ── */
+.section{padding:22px 32px 6px}
+.section-title{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#666;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.live-dot{width:7px;height:7px;background:#f33;border-radius:50%;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.75)}}
+.refresh-btn{margin-left:auto;font-size:11px;color:#444;cursor:pointer;letter-spacing:0;text-transform:none;font-weight:400;transition:color .15s}
+.refresh-btn:hover{color:#888}
+
+/* ── Live row ── */
+.scroll-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#1e1e35 transparent}
+.scroll-row::-webkit-scrollbar{height:4px}
+.scroll-row::-webkit-scrollbar-thumb{background:#1e1e35;border-radius:2px}
+.no-data{color:#444;font-size:13px;padding:8px 0}
+
+/* ── Live card ── */
+.live-card{flex-shrink:0;width:272px;background:#10101c;border-radius:10px;overflow:hidden;text-decoration:none;color:inherit;border:1px solid #1a1a2e;transition:transform .15s,box-shadow .15s}
+.live-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.6)}
+.live-thumb{position:relative;width:100%;height:153px;background:#0a0a18;overflow:hidden}
+.live-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.live-badge{position:absolute;top:8px;left:8px;background:#e03;color:#fff;font-size:10px;font-weight:700;letter-spacing:.6px;padding:2px 7px;border-radius:4px}
+.live-info{padding:9px 11px 11px}
+.live-ch{font-size:11px;color:#666;margin-bottom:4px;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live-ch-icon{width:18px;height:18px;border-radius:50%;object-fit:cover;background:#1a1a2e;flex-shrink:0}
+.live-title{font-size:12px;line-height:1.45;color:#ccd;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ── Generation sections ── */
+.gen-section{padding:16px 32px 2px;border-top:1px solid #0c0c18}
+.gen-label{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#bbb;margin-bottom:12px;padding:3px 10px 3px 6px;background:rgba(255,255,255,.03);border-radius:6px}
+.gen-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* ── Member card ── */
+.member-card{flex-shrink:0;width:138px;border-radius:10px;overflow:hidden;background:#10101c;border:1px solid #1a1a2e;transition:box-shadow .15s}
+.member-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.55)}
+.card-wrap{position:relative;width:138px;height:198px;overflow:hidden;background:linear-gradient(160deg,#111120,#0e0e1c)}
+.card-portrait{width:100%;height:100%;object-fit:cover;object-position:top center;display:block;transition:transform .35s}
+.member-card:hover .card-portrait{transform:scale(1.05)}
+.card-half{position:absolute;left:0;width:100%;height:50%;display:flex;align-items:center;justify-content:center;transition:background .18s;text-decoration:none;z-index:2}
+.card-half-yt{top:0}
+.card-half-tw{bottom:0}
+.card-half:hover{background:rgba(0,0,0,.58);backdrop-filter:blur(3px)}
+.card-divider{position:absolute;left:8%;width:84%;height:1px;top:50%;background:rgba(255,255,255,.1);z-index:3;pointer-events:none;opacity:0;transition:opacity .18s}
+.member-card:hover .card-divider{opacity:1}
+.card-icon{opacity:0;transition:opacity .18s,transform .18s;width:30px;height:30px;transform:scale(.7)}
+.card-half:hover .card-icon{opacity:1;transform:scale(1)}
+.card-name{text-align:center;font-size:11px;color:#aab;padding:6px 4px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+footer{text-align:center;padding:28px;font-size:11px;color:#333;border-top:1px solid #0c0c18;margin-top:20px}
+footer a{color:#333;text-decoration:none}
+footer a:hover{color:#555}
+</style>
+</head>
+<body>
+
+<!-- Hidden SVG icons -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="ico-yt" viewBox="0 0 24 24">
+    <path fill="#ff2020" d="M23.5 6.2a3.01 3.01 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5a3.01 3.01 0 0 0-2.1 2.1A31.2 31.2 0 0 0 0 12a31.2 31.2 0 0 0 .5 5.8 3.01 3.01 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3.01 3.01 0 0 0 2.1-2.1A31.2 31.2 0 0 0 24 12a31.2 31.2 0 0 0-.5-5.8zM9.75 15.5v-7l6.25 3.5-6.25 3.5z"/>
+  </symbol>
+  <symbol id="ico-x" viewBox="0 0 24 24">
+    <path fill="#e8e8f0" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-4.71-6.23-5.4 6.23H2.74l7.74-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23zm-1.16 17.52h1.83L7.08 4.13H5.12z"/>
+  </symbol>
+</svg>
+
+<header class="site-header">
+  <div class="site-title">hololive <span>hub</span></div>
+  <button class="api-btn" onclick="toggleApiInput()">⚙ API 设置</button>
+</header>
+
+<div id="apiBanner" class="api-banner hidden">
+  <span>Holodex API Key（<a href="https://holodex.net/login" target="_blank">免费注册获取</a>，直播模块需要）：</span>
+  <input id="apiKeyInput" type="text" placeholder="粘贴你的 Holodex API Key">
+  <button class="api-btn-save" onclick="saveApiKey()">保存</button>
+  <button class="api-btn-clear" onclick="clearApiKey()">清除</button>
+</div>
+
+<div class="section">
+  <div class="section-title">
+    <div class="live-dot"></div>
+    正在直播
+    <span id="liveCount" style="color:#555;font-weight:400;letter-spacing:0;text-transform:none"></span>
+    <span class="refresh-btn" onclick="loadLive()">↻ 刷新</span>
+  </div>
+  <div id="liveRow" class="scroll-row">
+    <div class="no-data">正在加载直播信息…</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">
+    <svg style="width:13px;height:13px;fill:#888;flex-shrink:0" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+    最新视频
+    <span id="videoCount" style="color:#555;font-weight:400;letter-spacing:0;text-transform:none"></span>
+    <span class="refresh-btn" onclick="loadVideos()">↻ 刷新</span>
+  </div>
+  <div id="videoRow" class="scroll-row">
+    <div class="no-data">正在加载…</div>
+  </div>
+</div>
+
+<div id="memberSections"></div>
+
+<footer>
+  图片来源：<a href="https://hololive.hololivepro.com" target="_blank">hololive production</a> &nbsp;·&nbsp;
+  直播数据：<a href="https://holodex.net" target="_blank">Holodex</a>
+</footer>
+
+<script>
+// ============================================================
+// MEMBER DATA
+// ============================================================
+const GENS = [
+  { key:'jp0', label:'JP 0期生', accent:'#5bc8e8', members:[
+    { name:'ときのそら',    ytId:'UCp6993wxpyDPHUpavwDFqgg', yt:'https://www.youtube.com/channel/UCp6993wxpyDPHUpavwDFqgg', tw:'https://twitter.com/tokino_sora',       img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Tokino-Sora_pr-img_01.png' },
+    { name:'ロボ子さん',   ytId:'UCDqI2jOz0weumE8s7paEk6g', yt:'https://www.youtube.com/channel/UCDqI2jOz0weumE8s7paEk6g', tw:'https://twitter.com/robocosan',          img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Robocosan_pr-img_01.png' },
+    { name:'さくらみこ',   ytId:'UC-hM6YJuNYVAmUWxeIr9FeA', yt:'https://www.youtube.com/channel/UC-hM6YJuNYVAmUWxeIr9FeA', tw:'https://twitter.com/sakuramiko35',      img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Sakura-Miko_pr-img_01.png' },
+    { name:'星街すいせい', ytId:'UC5CwaMl1eIgY8h02uZw7u8A', yt:'https://www.youtube.com/channel/UC5CwaMl1eIgY8h02uZw7u8A', tw:'https://twitter.com/suisei_hosimati', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Hoshimachi-Suisei_pr-img_01.png' },
+    { name:'AZKi',         ytId:'UC0TXe_LYZ4scaW2XMyi5_kw', yt:'https://www.youtube.com/channel/UC0TXe_LYZ4scaW2XMyi5_kw', tw:'https://twitter.com/AZKi_VDiVA',       img:'https://hololive.hololivepro.com/wp-content/uploads/2024/12/AZKi_pr-img_01.png' },
+  ]},
+  { key:'jp1', label:'JP 1期生', accent:'#ff8a65', members:[
+    { name:'アキ・ローゼンタール', ytId:'UCFTLzh12_nrtzqBPsTCqenA', yt:'https://www.youtube.com/channel/UCFTLzh12_nrtzqBPsTCqenA', tw:'https://twitter.com/akirosenthal',    img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Aki-Rosenthal_pr-img_01.png' },
+    { name:'赤井はあと',   ytId:'UC1CfXB_kRs3C-zaeTG3oGyg', yt:'https://www.youtube.com/channel/UC1CfXB_kRs3C-zaeTG3oGyg', tw:'https://twitter.com/akaihaato',          img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Akai-Haato_pr-img_01.png' },
+    { name:'白上フブキ',   ytId:'UCdn5BQ06XqgXoAxIhbqw5Rg', yt:'https://www.youtube.com/channel/UCdn5BQ06XqgXoAxIhbqw5Rg', tw:'https://twitter.com/shirakamifubuki',  img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Shirakami-Fubuki_pr-img_01.webp' },
+    { name:'夏色まつり',   ytId:'UCQ0UDLQCjY0rmuxCDE38FGg', yt:'https://www.youtube.com/channel/UCQ0UDLQCjY0rmuxCDE38FGg', tw:'https://twitter.com/natsuiromatsuri', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Natsuiro-Matsuri_pr-img_01.png' },
+  ]},
+  { key:'jp2', label:'JP 2期生', accent:'#81c784', members:[
+    { name:'百鬼あやめ', ytId:'UC7fk0CB07ly8oSl0aqKkqFg', yt:'https://www.youtube.com/channel/UC7fk0CB07ly8oSl0aqKkqFg', tw:'https://twitter.com/nakiriayame',   img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Nakiri-Ayame_pr-img_01.webp' },
+    { name:'癒月ちょこ', ytId:'UC1suqwovbL1kzsoaZgFZLKg', yt:'https://www.youtube.com/channel/UC1suqwovbL1kzsoaZgFZLKg', tw:'https://twitter.com/yuzukichococh', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Yuzuki-Choco_pr-img_01.png' },
+    { name:'大空スバル', ytId:'UCvzGlP9oQwU--Y0r9id_jnA', yt:'https://www.youtube.com/channel/UCvzGlP9oQwU--Y0r9id_jnA', tw:'https://twitter.com/oozorasubaru',  img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Oozora-Subaru_pr-img_01.webp' },
+  ]},
+  { key:'gamers', label:'JP GAMERS', accent:'#ce93d8', members:[
+    { name:'白上フブキ', ytId:'UCdn5BQ06XqgXoAxIhbqw5Rg', yt:'https://www.youtube.com/channel/UCdn5BQ06XqgXoAxIhbqw5Rg', tw:'https://twitter.com/shirakamifubuki', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Shirakami-Fubuki_pr-img_01.webp' },
+    { name:'大神ミオ',   ytId:'UCp-5t9SrOQwXMU7iIjQfARg', yt:'https://www.youtube.com/channel/UCp-5t9SrOQwXMU7iIjQfARg', tw:'https://twitter.com/ookamimio',       img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Ookami-Mio_pr-img_01.png' },
+    { name:'猫又おかゆ', ytId:'UCvaTdHTWBGv3MKj3KVqJVCw', yt:'https://www.youtube.com/channel/UCvaTdHTWBGv3MKj3KVqJVCw', tw:'https://twitter.com/nekomataokayu', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Nekomata-Okayu_pr-img_01.png' },
+    { name:'戌神ころね', ytId:'UChAnqc_AY5_I3Px5dig3X1Q', yt:'https://www.youtube.com/channel/UChAnqc_AY5_I3Px5dig3X1Q', tw:'https://twitter.com/inugamikorone', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Inugami-Korone_pr-img_01.png' },
+  ]},
+  { key:'jp3', label:'JP 3期生', accent:'#f48fb1', members:[
+    { name:'兎田ぺこら', ytId:'UC1DCedRgGHBdm81E1llLhOQ', yt:'https://www.youtube.com/channel/UC1DCedRgGHBdm81E1llLhOQ', tw:'https://twitter.com/usadapekora',   img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Usada-Pekora_pr-img_01.png' },
+    { name:'不知火フレア', ytId:'UCvInZx9h3jC2JzsIzoOebWg', yt:'https://www.youtube.com/channel/UCvInZx9h3jC2JzsIzoOebWg', tw:'https://twitter.com/shiranuiflare', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Shiranui-Flare_pr-img_01.png' },
+    { name:'白銀ノエル', ytId:'UCdyqAaZDKHXg4Ahi7VENThQ', yt:'https://www.youtube.com/channel/UCdyqAaZDKHXg4Ahi7VENThQ', tw:'https://twitter.com/shiroganenoel', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Shirogane-Noel_pr-img_01.webp' },
+    { name:'宝鐘マリン', ytId:'UCCzUftO8KOVkV4wQG1vkUvg', yt:'https://www.youtube.com/channel/UCCzUftO8KOVkV4wQG1vkUvg', tw:'https://twitter.com/houshoumarine', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Houshou-Marine_pr-img_01.png' },
+  ]},
+  { key:'jp4', label:'JP 4期生', accent:'#ffe082', members:[
+    { name:'角巻わため', ytId:'UCqm3BQLlJfvkTsX_hvm0UmA', yt:'https://www.youtube.com/channel/UCqm3BQLlJfvkTsX_hvm0UmA', tw:'https://twitter.com/tsunomakiwatame', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Tsunomaki-Watame_pr-img_01.png' },
+    { name:'常闇トワ',   ytId:'UC1uv2Oq6kNxgATlCiez59hw', yt:'https://www.youtube.com/channel/UC1uv2Oq6kNxgATlCiez59hw', tw:'https://twitter.com/tokoyamitowa',   img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Tokoyami-Towa_pr-img_01.png' },
+    { name:'姫森ルーナ', ytId:'UCa9Y57gfeY0Zro_noHRVrnw', yt:'https://www.youtube.com/channel/UCa9Y57gfeY0Zro_noHRVrnw', tw:'https://twitter.com/himemoriluna',   img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Himemori-Luna_pr-img_01.png' },
+  ]},
+  { key:'jp5', label:'JP 5期生', accent:'#80deea', members:[
+    { name:'雪花ラミィ', ytId:'UCFKOVgVbGmX65RxO3EtH3iw', yt:'https://www.youtube.com/channel/UCFKOVgVbGmX65RxO3EtH3iw', tw:'https://twitter.com/yukihanalamy',  img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Yukihana-Lamy_pr-img_01.png' },
+    { name:'桃鈴ねね',   ytId:'UCAWSyEs_Io8MtpY3m-zqILA', yt:'https://www.youtube.com/channel/UCAWSyEs_Io8MtpY3m-zqILA', tw:'https://twitter.com/momosuzunene', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/06/Momosuzu-Nene_pr-img_01.png' },
+    { name:'獅白ぼたん', ytId:'UCUKD-uaobj9jiqB-VXt71mA', yt:'https://www.youtube.com/channel/UCUKD-uaobj9jiqB-VXt71mA', tw:'https://twitter.com/shishirobotan', img:'https://hololive.hololivepro.com/wp-content/uploads/2024/05/Shishiro-Botan_pr-img_01.png' },
+    { name:'尾丸ポルカ', ytId:'UCK9V2B22uJYu3N7eR_BT9QA', yt:'https://www.youtube.com/channel/UCK9V2B22uJYu3N7eR_BT9QA', tw:'https://twitter.com/omarupolka',   img:'https://hololive.hololivepro.com/wp-content/uploads/2024/12/Omaru-Polka_pr-img_01.png' },
+  ]},
+  { key:'holox', label:'JP holoX', accent:'#b39ddb', members:[
+    { name:'ラプラス・ダークネス', ytId:'UCENwRMx5Yh42zWpzURebzTw', yt:'https://www.youtube.com/channel/UCENwRMx5Yh42zWpzURebzTw', tw:'https://twitter.com/LaplusDarknesss', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/La-Darknesss_pr-img_01.png' },
+    { name:'鷹嶺ルイ',   ytId:'UCs9_O1tRPMQTHQ-N_L6FU2g', yt:'https://www.youtube.com/channel/UCs9_O1tRPMQTHQ-N_L6FU2g', tw:'https://twitter.com/takanelui',      img:'https://hololive.hololivepro.com/wp-content/uploads/2024/08/Takane-Lui_pr-img_01.png' },
+    { name:'博衣こより', ytId:'UC6eWCld0KwmyHFbAqK3V-Rw', yt:'https://www.youtube.com/channel/UC6eWCld0KwmyHFbAqK3V-Rw', tw:'https://twitter.com/hakuikoyori',   img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Hakui-Koyori_pr-img_01.png' },
+    { name:'風真いろは', ytId:'UC_vMYWcDjmfdpH6r4TTn1MQ', yt:'https://www.youtube.com/channel/UC_vMYWcDjmfdpH6r4TTn1MQ', tw:'https://twitter.com/kazamairohach', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Kazama-Iroha_pr-img_01.png' },
+  ]},
+  { key:'regloss', label:'DEV_IS ReGLOSS', accent:'#a5d6a7', members:[
+    { name:'音乃瀬奏',       ytId:'', enName:'Otonose Kanade',    yt:'https://www.youtube.com/@OtonoseKanade',  tw:'https://twitter.com/otonosekanade',   img:'https://hololive.hololivepro.com/wp-content/uploads/2023/09/Otonose-Kanade_pr-img_01_a.png' },
+    { name:'一条莉々華',     ytId:'', enName:'Ichijou Ririka',    yt:'https://www.youtube.com/@IchijouRirika',  tw:'https://twitter.com/ichijouririka',   img:'https://hololive.hololivepro.com/wp-content/uploads/2023/09/Ichijou-Ririka_pr-img_01_a.png' },
+    { name:'儒烏風亭らでん', ytId:'', enName:'Juufuutei Raden',   yt:'https://www.youtube.com/@JuufuuteiRaden', tw:'https://twitter.com/juufuuteiraden', img:'https://hololive.hololivepro.com/wp-content/uploads/2023/09/Juufuutei-Raden_pr-img_01_a.png' },
+    { name:'轟はじめ',       ytId:'', enName:'Todoroki Hajime',   yt:'https://www.youtube.com/@TodorokiHajime', tw:'https://twitter.com/todoroki_hajime', img:'https://hololive.hololivepro.com/wp-content/uploads/2023/09/Todoroki-Hajime_pr-img_01_a.png' },
+  ]},
+  { key:'flowglow', label:'DEV_IS FLOW GLOW', accent:'#ffd54f', members:[
+    { name:'響咲リオナ',     ytId:'UC9LSiN9hXI55svYEBrrK-tw', yt:'https://www.youtube.com/channel/UC9LSiN9hXI55svYEBrrK-tw', tw:'https://x.com/isakiriona',    img:'https://hololive.hololivepro.com/wp-content/uploads/2023/09/Isaki-Riona_pr-img_01_a.png' },
+    { name:'虎金妃笑虎',     ytId:'UCuI_opAVX6qbxZY-a-AxFuQ', yt:'https://www.youtube.com/channel/UCuI_opAVX6qbxZY-a-AxFuQ', tw:'https://x.com/koganeiniko', img:'https://hololive.hololivepro.com/wp-content/uploads/2023/09/Koganei-Niko_pr-img_01_a.png' },
+    { name:'水宮枢',         ytId:'UCjk2nKmHzgH5Xy-C5qYRd5A', yt:'https://www.youtube.com/channel/UCjk2nKmHzgH5Xy-C5qYRd5A', tw:'https://x.com/mizumiya_su', img:'https://hololive.hololivepro.com/wp-content/uploads/2023/09/Mizumiya-Su_pr-img_01_a.png' },
+    { name:'輪堂千速',       ytId:'UCKMWFR6lAstLa7Vbf5dH7ig', yt:'https://www.youtube.com/channel/UCKMWFR6lAstLa7Vbf5dH7ig', tw:'https://x.com/rindochihaya', img:'https://hololive.hololivepro.com/wp-content/uploads/2023/09/Rindo-Chihaya_pr-img_01_a.png' },
+    { name:'綺々羅々ヴィヴィ', ytId:'UCGzTVXqMQHa4AgJVJIVvtDQ', yt:'https://www.youtube.com/channel/UCGzTVXqMQHa4AgJVJIVvtDQ', tw:'https://x.com/kikiraravivi', img:'https://hololive.hololivepro.com/wp-content/uploads/2023/09/Kikirara-Vivi_pr-img_01_a.png' },
+  ]},
+  { key:'id1', label:'ID Gen 1', accent:'#ef9a9a', members:[
+    { name:'Ayunda Risu',     ytId:'UCOyYb1c43VlX9rc_lT6NKQw', yt:'https://www.youtube.com/channel/UCOyYb1c43VlX9rc_lT6NKQw', tw:'https://twitter.com/ayunda_risu',     img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Ayunda-Risu_pr-img_01.png' },
+    { name:'Moona Hoshinova', ytId:'UCP0BspO_AMEe3aQqqpo89Dg', yt:'https://www.youtube.com/channel/UCP0BspO_AMEe3aQqqpo89Dg', tw:'https://twitter.com/moonahoshinova', img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Moona-Hoshinova_pr-img_01.png' },
+    { name:'Airani Iofifteen',ytId:'UCAoy6rzhSf4ydcYjJw3WoVg', yt:'https://www.youtube.com/channel/UCAoy6rzhSf4ydcYjJw3WoVg', tw:'https://twitter.com/airaniiofifteen',img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Airani-Iofifteen_pr-img_01.png' },
+  ]},
+  { key:'id2', label:'ID Gen 2', accent:'#80cbc4', members:[
+    { name:'Kureiji Ollie',  ytId:'UCYz_5n-uDuChHtLo7My1HnQ', yt:'https://www.youtube.com/channel/UCYz_5n-uDuChHtLo7My1HnQ', tw:'https://twitter.com/kureijiollie',  img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Kureiji-Ollie_pr-img_01.png' },
+    { name:'Anya Melfissa',  ytId:'UC727SQYUvx5pDDGQpTICNWg', yt:'https://www.youtube.com/channel/UC727SQYUvx5pDDGQpTICNWg', tw:'https://twitter.com/anyamelfissa',  img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Anya-Melfissa_pr-img_01.png' },
+    { name:'Pavolia Reine',  ytId:'UChgTyjG-pdNvxxhdsXfHQ5Q', yt:'https://www.youtube.com/channel/UChgTyjG-pdNvxxhdsXfHQ5Q', tw:'https://twitter.com/pavoliareine',  img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Pavolia-Reine_pr-img_01.png' },
+  ]},
+  { key:'id3', label:'ID Gen 3', accent:'#bcaaa4', members:[
+    { name:'Vestia Zeta',     ytId:'UCTvHWSfBZgtxE4sILOaurIQ', yt:'https://www.youtube.com/channel/UCTvHWSfBZgtxE4sILOaurIQ', tw:'https://twitter.com/vestiazeta',    img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Vestia-Zeta_pr-img_01.webp' },
+    { name:'Kaela Kovalskia', ytId:'UCZLZ8Jjx_RN2CXloOmgTHVg', yt:'https://www.youtube.com/channel/UCZLZ8Jjx_RN2CXloOmgTHVg', tw:'https://twitter.com/kaelakovalskia',img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Kaela-Kovalskia_pr-img_02.webp' },
+    { name:'Kobo Kanaeru',    ytId:'UCjLEmnpCNeisMxy134KPwWw', yt:'https://www.youtube.com/channel/UCjLEmnpCNeisMxy134KPwWw', tw:'https://twitter.com/kobokanaeru',   img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Kobo-Kanaeru_pr-img_01.webp' },
+  ]},
+  { key:'en1', label:'EN Myth', accent:'#9fa8da', members:[
+    { name:"Ninomae Ina'nis", ytId:'UCMwGHR0BTZuLsmjY_NT5Pwg', yt:'https://www.youtube.com/channel/UCMwGHR0BTZuLsmjY_NT5Pwg', tw:'https://twitter.com/ninomaeinanis',  img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Ninomae-Inanis_pr-img_01.webp' },
+    { name:'Takanashi Kiara', ytId:'UCHsx4Hqa-1ORjQTh9TYDhww', yt:'https://www.youtube.com/channel/UCHsx4Hqa-1ORjQTh9TYDhww', tw:'https://twitter.com/takanashikiara',img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Takanashi-Kiara_pr-img_01.webp' },
+    { name:'Watson Amelia',   ytId:'UCyl1z3jo3XHR1riLFKG5UAg', yt:'https://www.youtube.com/channel/UCyl1z3jo3XHR1riLFKG5UAg', tw:'https://twitter.com/watsonameliaEN',img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Watson-Amelia_pr-img_01.png' },
+    { name:'Mori Calliope',   ytId:'UCL_qhgtOy0dy1Agp8vkySQg', yt:'https://www.youtube.com/channel/UCL_qhgtOy0dy1Agp8vkySQg', tw:'https://twitter.com/moricalliope',  img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Mori-Calliope_pr-img_01.webp' },
+    { name:'Gawr Gura',       ytId:'UCoSrY_IQQVpmIRZ9Xf-y93g', yt:'https://www.youtube.com/channel/UCoSrY_IQQVpmIRZ9Xf-y93g', tw:'https://twitter.com/gawrgura',      img:'https://hololive.hololivepro.com/wp-content/uploads/2024/05/Gawr-Gura_pr-img_01.png' },
+  ]},
+  { key:'en2', label:'EN Council', accent:'#a5d6a7', members:[
+    { name:'Ceres Fauna',   ytId:'UCO_aKKYxn4tvrqPjcTzZ6EQ', yt:'https://www.youtube.com/channel/UCO_aKKYxn4tvrqPjcTzZ6EQ', tw:'https://twitter.com/ceresfauna',    img:'https://hololive.hololivepro.com/wp-content/uploads/2023/10/Ceres-Fauna_pr-img_01.png' },
+    { name:'Ouro Kronii',   ytId:'UCmbs8T6MWqUHP1tIQvSgKrg', yt:'https://www.youtube.com/channel/UCmbs8T6MWqUHP1tIQvSgKrg', tw:'https://twitter.com/ourokronii',    img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Ouro-Kronii_pr-img_01.webp' },
+    { name:'Nanashi Mumei', ytId:'UC3n5uGu18FoCy23ggWWp8tA', yt:'https://www.youtube.com/channel/UC3n5uGu18FoCy23ggWWp8tA', tw:'https://twitter.com/nanashimumei_en',img:'https://hololive.hololivepro.com/wp-content/uploads/2023/10/Nanashi-Mumei_pr-img_01.png' },
+    { name:'Hakos Baelz',   ytId:'UCgmPnx-EEeOrZSg5Tiw7ZRQ', yt:'https://www.youtube.com/channel/UCgmPnx-EEeOrZSg5Tiw7ZRQ', tw:'https://twitter.com/hakosbaelz',    img:'https://hololive.hololivepro.com/wp-content/uploads/2020/07/Hakos-Baelz_pr-img_01.png' },
+  ]},
+  { key:'en3', label:'EN Advent', accent:'#ffcc80', members:[
+    { name:'Shiori Novella',     ytId:'UCgnfPPb9JI3e9A4cXHnWbyg', yt:'https://www.youtube.com/channel/UCgnfPPb9JI3e9A4cXHnWbyg', tw:'https://twitter.com/shiorinovella', img:'https://hololive.hololivepro.com/wp-content/uploads/2021/07/Shiori-Novella_pr-img_01.webp' },
+    { name:'Koseki Bijou',       ytId:'UC9p_lqQ0FEDz327Vgf5JwqA', yt:'https://www.youtube.com/channel/UC9p_lqQ0FEDz327Vgf5JwqA', tw:'https://twitter.com/kosekibijou',   img:'https://hololive.hololivepro.com/wp-content/uploads/2021/07/Koseki-Bijou_pr-img_01.png' },
+    { name:'Nerissa Ravencroft', ytId:'UC_sFNM0z0MWm9A6WlKPuMMg', yt:'https://www.youtube.com/channel/UC_sFNM0z0MWm9A6WlKPuMMg', tw:'https://twitter.com/nerissa_en',    img:'https://hololive.hololivepro.com/wp-content/uploads/2021/07/Nerissa-Ravencroft_pr-img_01.webp' },
+    { name:'Fuwawa Abyssgard',   ytId:'UCt9H_RpQzhxzlyBxFqrdHqA', yt:'https://www.youtube.com/channel/UCt9H_RpQzhxzlyBxFqrdHqA', tw:'https://twitter.com/fuwamoco_en',   img:'https://hololive.hololivepro.com/wp-content/uploads/2021/07/Fuwawa-Abyssgard_pr-img_01.webp' },
+    { name:'Mococo Abyssgard',   ytId:'UCt9H_RpQzhxzlyBxFqrdHqA', yt:'https://www.youtube.com/channel/UCt9H_RpQzhxzlyBxFqrdHqA', tw:'https://twitter.com/fuwamoco_en',   img:'https://hololive.hololivepro.com/wp-content/uploads/2021/07/Mococo-Abyssgard_pr-img_01.webp' },
+  ]},
+  { key:'en4', label:'EN Justice', accent:'#f48fb1', members:[
+    { name:'Elizabeth Rose Bloodflame', ytId:'UCW5uhrG1eCBYditmhL0Ykjw', yt:'https://www.youtube.com/channel/UCW5uhrG1eCBYditmhL0Ykjw', tw:'https://x.com/ERBloodflame',    img:'https://hololive.hololivepro.com/wp-content/uploads/2023/07/Elizabeth-Rose-Bloodflame_pr-img_01.webp' },
+    { name:'Gigi Murin',               ytId:'UCDHABijvPBnJm7F-KlNME3w', yt:'https://www.youtube.com/channel/UCDHABijvPBnJm7F-KlNME3w', tw:'https://x.com/gigimurin',        img:'https://hololive.hololivepro.com/wp-content/uploads/2023/07/Gigi-Murin_pr-img_01.webp' },
+    { name:'Cecilia Immergreen',        ytId:'UCvN5h1ShZtc7nly3pezRayg', yt:'https://www.youtube.com/channel/UCvN5h1ShZtc7nly3pezRayg', tw:'https://x.com/ceciliaimgreen',  img:'https://hololive.hololivepro.com/wp-content/uploads/2023/07/Cecilia-Immergreen_pr-img_01.png' },
+    { name:'Raora Panthera',            ytId:'UCl69AEx4MdqMZH7Jtsm7Tig', yt:'https://www.youtube.com/channel/UCl69AEx4MdqMZH7Jtsm7Tig', tw:'https://x.com/raorapanthera',   img:'https://hololive.hololivepro.com/wp-content/uploads/2023/07/Raora-Panthera_pr-img_01.png' },
+  ]},
+];
+
+// ============================================================
+// API KEY
+// ============================================================
+function toggleApiInput() {
+  const el = document.getElementById('apiBanner');
+  el.classList.toggle('hidden');
+  if (!el.classList.contains('hidden'))
+    document.getElementById('apiKeyInput').value = localStorage.getItem('holodex_api_key') || '';
+}
+function saveApiKey() {
+  const v = document.getElementById('apiKeyInput').value.trim();
+  if (v) localStorage.setItem('holodex_api_key', v);
+  document.getElementById('apiBanner').classList.add('hidden');
+  loadLive();
+}
+function clearApiKey() {
+  localStorage.removeItem('holodex_api_key');
+  document.getElementById('apiBanner').classList.add('hidden');
+  loadLive();
+}
+
+// ============================================================
+// MEMBER FILTER — only show streams from members in the list
+// ============================================================
+// Build Set of known UC channel IDs
+const MEMBER_IDS = new Set(
+  GENS.flatMap(g => g.members.map(m => m.ytId)).filter(Boolean)
+);
+// English-name fallback for the 4 ReGLOSS members whose UC ID is unavailable
+const MEMBER_EN_NAMES = new Set(
+  GENS.flatMap(g => g.members.filter(m => !m.ytId && m.enName).map(m => m.enName))
+);
+function isMember(s) {
+  if (MEMBER_IDS.has(s.channel?.id)) return true;
+  const en = s.channel?.english_name || '';
+  const jp = s.channel?.name || '';
+  return MEMBER_EN_NAMES.has(en) || MEMBER_EN_NAMES.has(jp);
+}
+
+// ============================================================
+// LIVE STREAMS
+// ============================================================
+async function loadLive() {
+  const row = document.getElementById('liveRow');
+  row.innerHTML = '<div class="no-data">正在加载…</div>';
+  try {
+    const key = localStorage.getItem('holodex_api_key') || '8ebaa672-1238-411d-bd92-09f46f9d7fe7';
+    const hdrs = { 'Content-Type': 'application/json' };
+    if (key) hdrs['X-APIKEY'] = key;
+    const res = await fetch(
+      'https://holodex.net/api/v2/live?org=Hololive&type=stream&limit=50&max_upcoming_hours=0',
+      { headers: hdrs }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const live = data.filter(s => s.status === 'live' && isMember(s));
+    document.getElementById('liveCount').textContent = live.length ? `(${live.length})` : '';
+    if (!live.length) { row.innerHTML = '<div class="no-data">目前没有成员在直播</div>'; return; }
+    row.innerHTML = live.map(s => {
+      const thumb = `https://img.youtube.com/vi/${esc(s.id)}/mqdefault.jpg`;
+      const url   = `https://www.youtube.com/watch?v=${esc(s.id)}`;
+      const ch    = esc(s.channel?.name || '');
+      const icon  = esc(s.channel?.photo || '');
+      const title = esc(s.title || '');
+      return `<a href="${url}" target="_blank" class="live-card">
+        <div class="live-thumb">
+          <img src="${thumb}" alt="${title}" loading="lazy">
+          <div class="live-badge">LIVE</div>
+        </div>
+        <div class="live-info">
+          <div class="live-ch">${icon ? `<img class="live-ch-icon" src="${icon}" alt="">` : ''}${ch}</div>
+          <div class="live-title">${title}</div>
+        </div>
+      </a>`;
+    }).join('');
+  } catch(e) {
+    row.innerHTML = `<div class="no-data">加载失败 (${esc(e.message)})。请点击 ⚙ 设置 填入 <a href="https://holodex.net/login" target="_blank" style="color:#00b4e8">Holodex API Key</a>。</div>`;
+  }
+}
+
+// ============================================================
+// VIDEOS
+// ============================================================
+// Official Hololive org channels (excluding Holostars)
+const OFFICIAL_IDS = new Set([
+  'UCJFZiqLMntJufDCHc6bQixg', // hololive official (JP)
+  'UCotXwdjQoiKNxkvrH4Gyy-A', // hololive English
+]);
+const VIDEO_IDS = new Set([...MEMBER_IDS, ...OFFICIAL_IDS]);
+
+function relTime(iso) {
+  if (!iso) return '';
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60)       return '刚刚';
+  if (s < 3600)     return Math.floor(s / 60)   + ' 分钟前';
+  if (s < 86400)    return Math.floor(s / 3600)  + ' 小时前';
+  if (s < 2592000)  return Math.floor(s / 86400) + ' 天前';
+  if (s < 31536000) return Math.floor(s / 2592000) + ' 个月前';
+  return Math.floor(s / 31536000) + ' 年前';
+}
+
+async function loadVideos() {
+  const row = document.getElementById('videoRow');
+  row.innerHTML = '<div class="no-data">正在加载…</div>';
+  try {
+    const key = localStorage.getItem('holodex_api_key') || '8ebaa672-1238-411d-bd92-09f46f9d7fe7';
+    const res = await fetch(
+      'https://holodex.net/api/v2/videos?org=Hololive&type=clip&status=past&limit=60&sort=available_at&order=desc',
+      { headers: { 'X-APIKEY': key } }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    const videos = data.filter(v => {
+      const id = v.channel?.id;
+      if (VIDEO_IDS.has(id)) return true;
+      const en = v.channel?.english_name || '';
+      const jp = v.channel?.name || '';
+      return MEMBER_EN_NAMES.has(en) || MEMBER_EN_NAMES.has(jp);
+    }).slice(0, 30);
+
+    document.getElementById('videoCount').textContent = videos.length ? `(${videos.length})` : '';
+    if (!videos.length) { row.innerHTML = '<div class="no-data">暂无视频数据</div>'; return; }
+
+    row.innerHTML = videos.map(v => {
+      const thumb = `https://img.youtube.com/vi/${esc(v.id)}/mqdefault.jpg`;
+      const url   = `https://www.youtube.com/watch?v=${esc(v.id)}`;
+      const ch    = esc(v.channel?.name || '');
+      const icon  = esc(v.channel?.photo || '');
+      const title = esc(v.title || '');
+      const date  = relTime(v.available_at || v.published_at || '');
+      return `<a href="${url}" target="_blank" class="live-card">
+        <div class="live-thumb">
+          <img src="${thumb}" alt="${title}" loading="lazy">
+        </div>
+        <div class="live-info">
+          <div class="live-ch">${icon ? `<img class="live-ch-icon" src="${icon}" alt="">` : ''}${ch}</div>
+          <div class="live-title">${title}</div>
+          <div style="font-size:11px;color:#444;margin-top:4px">${date}</div>
+        </div>
+      </a>`;
+    }).join('');
+  } catch(e) {
+    row.innerHTML = `<div class="no-data">视频加载失败 (${esc(e.message)})</div>`;
+  }
+}
+
+// ============================================================
+// MEMBER GRID
+// ============================================================
+function renderMembers() {
+  document.getElementById('memberSections').innerHTML = GENS.map(g => `
+    <div class="gen-section">
+      <div class="gen-label">
+        <span class="gen-dot" style="background:${g.accent}"></span>${g.label}
+      </div>
+      <div class="scroll-row">
+        ${g.members.map(m => `
+        <div class="member-card">
+          <div class="card-wrap">
+            <img class="card-portrait" src="${esc(m.img)}" alt="${esc(m.name)}" loading="lazy">
+            <div class="card-divider"></div>
+            <a class="card-half card-half-yt" href="${esc(m.yt)}" target="_blank" title="YouTube">
+              <svg class="card-icon" viewBox="0 0 24 24"><use href="#ico-yt"/></svg>
+            </a>
+            <a class="card-half card-half-tw" href="${esc(m.tw)}" target="_blank" title="Twitter / X">
+              <svg class="card-icon" viewBox="0 0 24 24"><use href="#ico-x"/></svg>
+            </a>
+          </div>
+          <div class="card-name">${esc(m.name)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderMembers();
+loadLive();
+loadVideos();
+setInterval(loadLive, 5 * 60 * 1000);
+setInterval(loadVideos, 30 * 60 * 1000);
+</script>
+</body>
+</html>
